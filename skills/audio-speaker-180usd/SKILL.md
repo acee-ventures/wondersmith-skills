@@ -54,3 +54,61 @@ Class-D amp switching at 500kHz will couple into BT radio if unshielded. Keep th
 | Assembly + QA + BT cert (amortized) | 40 | $4.20 | $168 |
 | **Total** | | | **~$1608** |
 | Per-unit landed | | | **~$40** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Cylindrical portable BT speaker ─────────────────────────────────────────
+# Grille + driver cutout on one face, passive radiator on the opposite face,
+# USB-C + aux jack + button row along the side.
+BODY_D      = 90.0
+BODY_L      = 130.0
+WALL        = 2.4
+DRIVER_D    = 58.0   # main 2.5" full-range driver cutout
+RADIATOR_D  = 60.0   # passive radiator cutout
+USBC_W      = 9.2
+USBC_H      = 3.4
+AUX_D       = 6.2
+BTN_D       = 6.0
+
+body = (
+    cq.Workplane("XY")
+    .circle(BODY_D / 2).extrude(BODY_L)
+    .faces(">Z").shell(-WALL)
+)
+
+# Driver on +Z face, radiator on -Z.
+driver = (
+    cq.Workplane("XY")
+    .workplane(offset=BODY_L - WALL - 0.1)
+    .circle(DRIVER_D / 2).extrude(WALL + 0.5, combine="s")
+)
+radiator = (
+    cq.Workplane("XY")
+    .workplane(offset=-0.1)
+    .circle(RADIATOR_D / 2).extrude(-WALL - 0.5, combine="s")
+)
+
+# Port row on +Y side.
+side_z = BODY_L / 2
+usbc = (
+    cq.Workplane("XZ")
+    .workplane(offset=BODY_D / 2 - WALL - 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(0, side_z).rect(USBC_W, USBC_H).extrude(WALL + 2, combine="s")
+)
+aux = (
+    cq.Workplane("XZ")
+    .workplane(offset=BODY_D / 2 - WALL - 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(-14, side_z).circle(AUX_D / 2).extrude(WALL + 2, combine="s")
+)
+btns = (
+    cq.Workplane("XZ")
+    .workplane(offset=BODY_D / 2 - WALL - 0.1, centerOption="CenterOfBoundBox")
+    .pushPoints([(+12, side_z + 12), (+12, side_z), (+12, side_z - 12)])
+    .circle(BTN_D / 2).extrude(WALL + 2, combine="s")
+)
+
+result = body.cut(driver).cut(radiator).cut(usbc).cut(aux).cut(btns)
+```
+<!-- /cadquery-base -->

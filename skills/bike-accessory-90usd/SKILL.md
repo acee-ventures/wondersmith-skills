@@ -57,3 +57,63 @@ Bars: Ø22.2mm (road drop bars), Ø31.8mm (MTB/gravel), Ø35mm (some race road).
 | Assembly + IPX7 verify | 50 | $2.80 | $140 |
 | **Total** | | | **~$925** |
 | Per-unit landed | | | **~$18** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+import math
+
+# ── Handlebar-mounted pod ───────────────────────────────────────────────────
+# Weather-sealed body with a split silicone strap channel for Ø22.2-35mm bars.
+# USB-C port behind a recessed silicone flap on the rear.
+POD_L   = 60.0   # along handlebar
+POD_W   = 26.0
+POD_H   = 22.0
+CORNER  = 4.0
+WALL    = 2.0
+BAR_MIN = 22.2
+BAR_MAX = 35.0
+STRAP_W = 12.0   # silicone strap channel width
+USBC_W  = 9.2
+USBC_H  = 3.4
+
+body = (
+    cq.Workplane("XY")
+    .box(POD_L, POD_W, POD_H)
+    .edges("|Z").fillet(CORNER)
+    .edges(">Z or <Z").fillet(2.0)
+    .faces(">Z").shell(-WALL)
+)
+
+# Handlebar cradle on the bottom: cylinder subtracted, sized for BAR_MAX so
+# silicone strap takes up the tolerance on smaller bars.
+cradle_center = (0, 0, -POD_H / 2 + BAR_MAX / 2)
+cradle = (
+    cq.Workplane("XY")
+    .workplane(offset=cradle_center[2])
+    .moveTo(0, 0).circle(BAR_MAX / 2).extrude(POD_L, combine="s")
+    .rotate((0, 0, 0), (0, 1, 0), 90)
+    .translate((0, 0, 0))
+)
+# Strap channels running around the cradle.
+strap_cuts = (
+    cq.Workplane("XZ")
+    .pushPoints([(+POD_L / 2 - 8, cradle_center[2]), (-POD_L / 2 + 8, cradle_center[2])])
+    .rect(STRAP_W, BAR_MAX + 2 * WALL + 6).extrude(POD_W, combine="s")
+)
+
+# USB-C on the rear face behind a recessed flap (0.4mm pocket).
+usbc = (
+    cq.Workplane("XZ")
+    .workplane(offset=POD_W / 2 + 0.01, centerOption="CenterOfBoundBox")
+    .rect(USBC_W + 3.0, USBC_H + 2.0).extrude(-0.4, combine="s")
+)
+usbc_hole = (
+    cq.Workplane("XZ")
+    .workplane(offset=POD_W / 2 + 0.01, centerOption="CenterOfBoundBox")
+    .rect(USBC_W, USBC_H).extrude(-WALL - 0.5, combine="s")
+)
+
+result = body.cut(cradle).cut(strap_cuts).cut(usbc).cut(usbc_hole)
+```
+<!-- /cadquery-base -->

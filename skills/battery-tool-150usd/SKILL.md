@@ -62,3 +62,65 @@ PTC on motor housing, NOT on PCB — PCB temp lags motor by 20-30s under overloa
 | Assembly + UL cert (amortized) | 40 | $4.60 | $184 |
 | **Total** | | | **~$1588** |
 | Per-unit landed | | | **~$40** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Cordless hand-tool body (handle + motor housing + trigger boss) ─────────
+# Glass-filled nylon body; motor axis perpendicular to grip; 18650 2S pack
+# in the handle base; trigger on the grip underside.
+HANDLE_L     = 110.0   # grip length
+HANDLE_D     = 34.0    # grip diameter
+MOTOR_D      = 40.0    # motor housing Ø
+MOTOR_L      = 80.0    # motor housing length (axis along +Y)
+WALL         = 2.4
+TRIG_W       = 22.0    # trigger cutout (W × L)
+TRIG_L       = 14.0
+BATT_W       = 22.0    # 2S pack recess at handle base (W × L × depth)
+BATT_L       = 68.0
+BATT_D       = 20.0
+VENT_W       = 16.0    # motor housing vent slot (W × H)
+VENT_H       = 4.0
+
+handle = (
+    cq.Workplane("XY")
+    .circle(HANDLE_D / 2).extrude(HANDLE_L)
+    .faces(">Z").shell(-WALL)
+)
+
+# Motor housing perpendicular, centered at top of grip.
+motor = (
+    cq.Workplane("XY")
+    .workplane(offset=HANDLE_L - 0.1)
+    .moveTo(0, MOTOR_L / 2 - 8)
+    .circle(MOTOR_D / 2).extrude(MOTOR_L).rotate((0, 0, 0), (1, 0, 0), 90)
+    .translate((0, 0, HANDLE_L - MOTOR_L / 2 + 10))
+    .faces(">Y").shell(-WALL)
+)
+
+# Trigger cutout on the underside of the grip.
+trigger = (
+    cq.Workplane("XZ")
+    .workplane(offset=HANDLE_D / 2 + 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(0, HANDLE_L / 2 + 10)
+    .rect(TRIG_W, TRIG_L).extrude(-WALL - 0.5, combine="s")
+)
+
+# Battery pack recess at handle base (-Z).
+batt = (
+    cq.Workplane("XY")
+    .rect(BATT_W, BATT_L).extrude(BATT_D, combine="s")
+)
+
+# Motor vent slots.
+vents = (
+    cq.Workplane("XZ")
+    .workplane(offset=0.0, centerOption="CenterOfBoundBox")
+    .pushPoints([(0, HANDLE_L + 20), (0, HANDLE_L + 40), (0, HANDLE_L + 60)])
+    .rect(VENT_W, VENT_H).extrude(MOTOR_L, combine="s")
+)
+
+result = handle.union(motor).cut(trigger).cut(batt).cut(vents)
+```
+<!-- /cadquery-base -->

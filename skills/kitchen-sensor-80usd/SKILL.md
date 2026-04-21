@@ -52,3 +52,49 @@ Single-sensor measurement + readout, kitchen context, $40-100. Don't use this sk
 | Assembly + cert paperwork | 30 | $2.60 | $78 |
 | **Total** | | | **~$504** |
 | Per-unit landed | | | **~$17** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Handheld kitchen sensor: cylindrical handle + probe ferrule ─────────────
+# Handle holds PCB + coin cell; a 3.5 mm TRS jack on the bottom accepts
+# a detachable stainless probe. Display window on the top face.
+HANDLE_D   = 24.0  # handle outer Ø
+HANDLE_L   = 82.0
+WALL       = 1.8
+DISP_W     = 18.0  # display cutout (W along axis × H around axis)
+DISP_H     = 10.0
+BTN_D      = 4.0
+TRS_D      = 6.2   # 3.5 mm TRS jack barrel Ø + tolerance
+
+handle = (
+    cq.Workplane("XY")
+    .circle(HANDLE_D / 2).extrude(HANDLE_L)
+    .faces(">Z").shell(-WALL)
+)
+
+# Display window on +Y side, positioned upper third of the handle.
+disp_cut = (
+    cq.Workplane("XZ")
+    .workplane(offset=HANDLE_D / 2 + 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(0, HANDLE_L / 2 - 14)
+    .rect(DISP_W, DISP_H).extrude(-WALL - 0.2, combine="s")
+)
+
+btn_cut = (
+    cq.Workplane("XZ")
+    .workplane(offset=HANDLE_D / 2 + 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(0, 4)
+    .circle(BTN_D / 2).extrude(-WALL - 0.2, combine="s")
+)
+
+trs_hole = (
+    cq.Workplane("XY")
+    .workplane(offset=HANDLE_L / 2 - HANDLE_L / 2)
+    .circle(TRS_D / 2).extrude(-WALL - 0.2, combine="s")
+)
+
+result = handle.cut(disp_cut).cut(btn_cut).cut(trs_hole)
+```
+<!-- /cadquery-base -->

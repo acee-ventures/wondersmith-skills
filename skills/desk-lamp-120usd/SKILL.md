@@ -58,3 +58,66 @@ duty = pow(slider/255.0, 2.5) * 255;
 | Assembly + cert | 30 | $2.40 | $72 |
 | **Total** | | | **~$711** |
 | Per-unit landed | | | **~$24** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Desk lamp base + stem + shade ring ──────────────────────────────────────
+# Aluminum base disc (2 kg feel via weighted steel puck); PLA stem tube;
+# shade ring cradles a COB strip. Tune radii and the two cable exits.
+BASE_D     = 140.0
+BASE_H     = 18.0
+STEM_OD    = 14.0
+STEM_ID    = 10.0
+STEM_L     = 260.0
+SHADE_OD   = 70.0
+SHADE_W    = 28.0     # ring width
+SHADE_T    = 3.0      # ring wall
+CABLE_D    = 6.5      # strain-relief hole
+
+base = (
+    cq.Workplane("XY")
+    .circle(BASE_D / 2).extrude(BASE_H)
+    .edges(">Z").fillet(3.0)
+    .edges("<Z").fillet(1.5)
+)
+# Hollow out the base for steel puck + cable routing.
+base_cav = (
+    cq.Workplane("XY")
+    .workplane(offset=2.5)
+    .circle((BASE_D - 12) / 2).extrude(BASE_H - 4.5, combine="s")
+)
+# Stem hole at the rear of the base + cable exit.
+stem_hole = (
+    cq.Workplane("XY")
+    .workplane(offset=BASE_H + 0.1)
+    .moveTo(0, -BASE_D / 2 + 22)
+    .circle(STEM_OD / 2).extrude(-BASE_H - 1, combine="s")
+)
+cable_exit = (
+    cq.Workplane("XZ")
+    .workplane(offset=BASE_D / 2 + 0.1, centerOption="CenterOfBoundBox")
+    .moveTo(0, BASE_H / 2)
+    .circle(CABLE_D / 2).extrude(-6.0, combine="s")
+)
+
+# Stem tube.
+stem = (
+    cq.Workplane("XY")
+    .workplane(offset=BASE_H)
+    .moveTo(0, -BASE_D / 2 + 22)
+    .circle(STEM_OD / 2).circle(STEM_ID / 2).extrude(STEM_L)
+)
+
+# Shade ring (open cylinder tilted 20° forward). Built separately, then
+# positioned via translate.
+shade = (
+    cq.Workplane("XZ")
+    .circle(SHADE_OD / 2).circle(SHADE_OD / 2 - SHADE_T).extrude(SHADE_W)
+    .translate((0, -BASE_D / 2 + 22, BASE_H + STEM_L - 10))
+)
+
+result = base.cut(base_cav).cut(stem_hole).cut(cable_exit).union(stem).union(shade)
+```
+<!-- /cadquery-base -->

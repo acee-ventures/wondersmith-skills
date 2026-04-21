@@ -78,3 +78,58 @@ Do NOT use when: medical-grade, automotive-grade, food-contact, > 10W power draw
 - If prompt demands fanless sealed enclosure AND charging IC, add thermal relief holes or switch to lower-current charging (500 mA).
 - If retail target < $200, drop ESP32-S3 to C3 SuperMini, drop e-ink to TFT, drop battery to 1000mAh — re-check BOM lands at $45-60 raw.
 - If retail target > $350, upgrade to aluminium CNC enclosure, add Qi charging, or add second MCU for compute.
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Parametric desk-electronics enclosure ───────────────────────────────────
+# 2-part snap shell sized for an ESP32-class PCB. Tune the first block,
+# Step 3's structural-engineering LLM emits the delta against this.
+PCB_L     = 60.0   # PCB length along X
+PCB_W     = 40.0   # PCB width  along Y
+PCB_T     = 1.6    # PCB thickness
+WALL      = 2.2    # shell wall thickness
+STANDOFF  = 4.0    # PCB standoff height from inner floor
+CLEAR_Z   = 12.0   # clearance above PCB top (tallest component)
+USBC_W    = 9.2    # USB-C receptacle cutout (W × H)
+USBC_H    = 3.4
+USBC_DY   = 8.0    # USB-C offset from PCB center along X
+BOSS_D    = 4.0    # PCB mounting boss outer Ø
+BOSS_HOLE = 2.2    # M2 tap Ø (self-tap for PLA/PETG)
+
+OUT_L = PCB_L + 2 * WALL + 1.0
+OUT_W = PCB_W + 2 * WALL + 1.0
+OUT_H = STANDOFF + PCB_T + CLEAR_Z + 2 * WALL
+
+shell = (
+    cq.Workplane("XY")
+    .box(OUT_L, OUT_W, OUT_H)
+    .faces(">Z").shell(-WALL)
+)
+
+boss_centers = [
+    (+PCB_L / 2 - 4, +PCB_W / 2 - 4),
+    (+PCB_L / 2 - 4, -PCB_W / 2 + 4),
+    (-PCB_L / 2 + 4, +PCB_W / 2 - 4),
+    (-PCB_L / 2 + 4, -PCB_W / 2 + 4),
+]
+bosses = (
+    cq.Workplane("XY")
+    .workplane(offset=-(OUT_H / 2 - WALL))
+    .pushPoints(boss_centers)
+    .circle(BOSS_D / 2).extrude(STANDOFF)
+    .faces(">Z").workplane()
+    .pushPoints(boss_centers).hole(BOSS_HOLE, depth=STANDOFF - 0.6)
+)
+
+usbc = (
+    cq.Workplane("XZ")
+    .workplane(offset=OUT_W / 2 + 0.01, centerOption="CenterOfBoundBox")
+    .moveTo(USBC_DY, -(OUT_H / 2 - WALL - STANDOFF - PCB_T - 0.7))
+    .rect(USBC_W, USBC_H).extrude(-WALL - 0.2)
+)
+
+result = shell.union(bosses).cut(usbc)
+```
+<!-- /cadquery-base -->

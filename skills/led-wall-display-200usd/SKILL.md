@@ -53,3 +53,69 @@ Too thin (<2mm opal) and you see individual LED dots. Too thick (>5mm) and lette
 | Assembly + QA | 20 | $3.80 | $76 |
 | **Total** | | | **~$1096** |
 | Per-unit landed | | | **~$55** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── LED matrix display frame ────────────────────────────────────────────────
+# Outer wood/acrylic frame + inner rebate for the 3 mm diffuser + rear pocket
+# for the WS2812 panel + ESP32 board. Keyhole mounts on top edge.
+PANEL_L      = 180.0    # visible matrix width (16×16 @ 10mm pitch ≈ 160; margin added)
+PANEL_W      = 180.0
+FRAME_THK    = 14.0     # frame thickness (depth from wall)
+FRAME_MARGIN = 16.0     # outer frame around visible panel
+DIFF_DEPTH   = 3.5      # diffuser sits flush with front face
+REAR_DEPTH   = 8.0      # pocket for matrix + ESP32
+MOUNT_HOLE   = 5.0      # keyhole Ø
+MOUNT_OFFSET = 22.0     # from top edge
+
+OUTER_L = PANEL_L + 2 * FRAME_MARGIN
+OUTER_W = PANEL_W + 2 * FRAME_MARGIN
+
+frame = (
+    cq.Workplane("XY")
+    .box(OUTER_L, OUTER_W, FRAME_THK)
+    .edges("|Z").fillet(2.0)
+)
+
+# Diffuser rebate (shallow pocket on the front).
+diff_rebate = (
+    cq.Workplane("XY")
+    .workplane(offset=FRAME_THK / 2 - DIFF_DEPTH + 0.1)
+    .rect(PANEL_L + 2.0, PANEL_W + 2.0).extrude(DIFF_DEPTH, combine="s")
+)
+
+# Rear pocket for the matrix PCB + ESP32.
+rear_pocket = (
+    cq.Workplane("XY")
+    .workplane(offset=-FRAME_THK / 2)
+    .rect(PANEL_L + 6.0, PANEL_W + 6.0).extrude(REAR_DEPTH, combine="s")
+)
+
+# Keyhole mounts: a circle + slot (slot under the circle) on top of the frame.
+def keyhole(cx):
+    circle = (
+        cq.Workplane("XY")
+        .workplane(offset=FRAME_THK / 2 - 1.0)
+        .moveTo(cx, OUTER_W / 2 - MOUNT_OFFSET)
+        .circle(MOUNT_HOLE / 2).extrude(-FRAME_THK + 2.0, combine="s")
+    )
+    slot = (
+        cq.Workplane("XY")
+        .workplane(offset=FRAME_THK / 2 - 1.0)
+        .moveTo(cx, OUTER_W / 2 - MOUNT_OFFSET - 6)
+        .rect(MOUNT_HOLE * 0.4, 8).extrude(-FRAME_THK + 2.0, combine="s")
+    )
+    return circle, slot
+
+kh_l_c, kh_l_s = keyhole(-OUTER_L / 3)
+kh_r_c, kh_r_s = keyhole(+OUTER_L / 3)
+
+result = (
+    frame
+    .cut(diff_rebate).cut(rear_pocket)
+    .cut(kh_l_c).cut(kh_l_s).cut(kh_r_c).cut(kh_r_s)
+)
+```
+<!-- /cadquery-base -->

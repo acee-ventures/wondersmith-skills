@@ -59,3 +59,67 @@ Unless the product has ≥15W of red+blue 5000K LED, it's an indicator, not a gr
 | Assembly + QA | 50 | $2.20 | $110 |
 | **Total** | | | **~$820** |
 | Per-unit landed | | | **~$16** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Soil-probe plant monitor ────────────────────────────────────────────────
+# Long ASA probe stem (root-zone reach) + UV-resistant head with BH1750
+# window + capacitive touch button + optional solar pad pocket.
+PROBE_L     = 85.0
+PROBE_W     = 12.0     # probe stem is rectangular (structural against soil drag)
+PROBE_T     = 6.0
+HEAD_L      = 50.0
+HEAD_W      = 38.0
+HEAD_H      = 18.0
+CORNER_R    = 3.0
+WALL        = 1.8
+LIGHT_D     = 6.0      # BH1750 window
+BTN_D       = 7.0
+SOLAR_W     = 28.0
+SOLAR_H     = 16.0
+
+# Head: rounded rectangular body, shelled from the bottom for internals.
+head = (
+    cq.Workplane("XY")
+    .box(HEAD_L, HEAD_W, HEAD_H)
+    .edges("|Z").fillet(CORNER_R)
+    .edges(">Z or <Z").fillet(1.5)
+    .faces("<Z").shell(-WALL)
+)
+
+# Light window on +Z face (top).
+light = (
+    cq.Workplane("XY")
+    .workplane(offset=HEAD_H / 2 - WALL - 0.1)
+    .moveTo(HEAD_L / 2 - 10, 0).circle(LIGHT_D / 2).extrude(WALL + 0.5, combine="s")
+)
+
+# Capacitive touch on +Z face.
+btn = (
+    cq.Workplane("XY")
+    .workplane(offset=HEAD_H / 2 - WALL - 0.1)
+    .moveTo(-HEAD_L / 2 + 12, 0).circle(BTN_D / 2).extrude(WALL + 0.5, combine="s")
+)
+
+# Solar pad recess on +Z (leaves 0.4mm skin so we keep IP rating).
+solar = (
+    cq.Workplane("XY")
+    .workplane(offset=HEAD_H / 2 - 0.4)
+    .rect(SOLAR_W, SOLAR_H).extrude(0.4 - 0.01, combine="s")
+)
+
+# Probe stem coming out of the bottom.
+probe = (
+    cq.Workplane("XY")
+    .workplane(offset=-HEAD_H / 2)
+    .rect(PROBE_W, PROBE_T).extrude(-PROBE_L)
+    .edges("|Z").fillet(1.0)
+)
+# Chamfer the probe tip for soil entry.
+probe = probe.faces("<Z").chamfer(0.8)
+
+result = head.cut(light).cut(btn).cut(solar).union(probe)
+```
+<!-- /cadquery-base -->

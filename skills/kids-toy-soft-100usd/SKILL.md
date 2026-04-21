@@ -72,3 +72,62 @@ Trigger on prompts combining ≥2 of:
 | Per-unit landed | | | **~$27** |
 
 Retail $80-120 leaves ~3-4× multiplier margin, standard for specialty kids toys.
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+import math
+
+# ── Internal ABS skeleton for a plush toy ───────────────────────────────────
+# Goal: hollow shell that fits inside a ~110 mm plush ball, battery door
+# on the bottom, round external geometry (≥3 mm radius), no small parts.
+BODY_D      = 70.0   # outer Ø of ABS core
+WALL        = 1.8    # skeleton wall
+BATT_W      = 26.0   # AAA holder footprint (W × L × depth)
+BATT_L      = 46.0
+BATT_DEPTH  = 15.0
+DOOR_SCREW  = 2.4    # M2 self-tap for door captive screw
+SPEAKER_D   = 27.0   # piezo speaker cutout
+LED_D       = 3.0    # 3 mm LED hole × 6 on top hemisphere
+
+shell = (
+    cq.Workplane("XY")
+    .sphere(BODY_D / 2)
+    .faces("<Z").workplane(invert=True)
+    .circle((BODY_D - 2 * WALL) / 2).extrude(-(BODY_D / 2 - WALL), combine="s")
+)
+
+# Battery bay on the bottom: rectangular recess with two screw posts.
+batt_bay = (
+    cq.Workplane("XY")
+    .workplane(offset=-BODY_D / 2 + BATT_DEPTH)
+    .rect(BATT_W, BATT_L).extrude(-BATT_DEPTH - 0.2, combine="s")
+)
+door_screws = (
+    cq.Workplane("XY")
+    .workplane(offset=-BODY_D / 2 + WALL)
+    .pushPoints([(+BATT_W / 2 + 3, 0), (-BATT_W / 2 - 3, 0)])
+    .hole(DOOR_SCREW, depth=6.0)
+)
+
+# Speaker grill on +Y equator + 6 LED holes evenly spaced on top hemisphere.
+speaker = (
+    cq.Workplane("XZ")
+    .workplane(offset=BODY_D / 2 - WALL - 0.1, centerOption="CenterOfBoundBox")
+    .circle(SPEAKER_D / 2).extrude(2 * WALL, combine="s")
+)
+led_points = [
+    (math.cos(math.radians(a)) * (BODY_D / 2 + 0.1),
+     math.sin(math.radians(a)) * (BODY_D / 2 + 0.1))
+    for a in range(0, 360, 60)
+]
+leds = (
+    cq.Workplane("XY")
+    .workplane(offset=BODY_D / 4)
+    .pushPoints(led_points)
+    .circle(LED_D / 2).extrude(WALL + 0.5, combine="s")
+)
+
+result = shell.union(batt_bay).cut(door_screws).cut(speaker).cut(leds)
+```
+<!-- /cadquery-base -->

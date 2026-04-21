@@ -71,3 +71,57 @@ If strap is TPU on skin for >4h/day: nickel release test (EN 1811) if any metal 
 | Assembly + QA | 50 | $3.40 | $170 |
 | **Total** | | | **~$1222** |
 | Per-unit landed | | | **~$24** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Parametric wearable body (wrist strap pod) ──────────────────────────────
+# Rounded rectangular shell with strap slots, charging pogo pads on the
+# back, display window on the top. PCB + LiPo + LRA stack from bottom→top.
+POD_L     = 34.0   # along strap axis
+POD_W     = 22.0
+POD_H     = 9.8
+CORNER_R  = 4.0
+WALL      = 1.6
+DISP_W    = 14.0   # display window
+DISP_H    = 8.0
+STRAP_W   = 18.0   # strap slot width
+STRAP_H   = 2.6    # strap slot slit height
+POGO_D    = 2.2    # charging pogo pad through-hole × 2
+
+shell = (
+    cq.Workplane("XY")
+    .box(POD_L, POD_W, POD_H)
+    .edges("|Z").fillet(CORNER_R)
+    .edges(">Z or <Z").fillet(1.5)
+    .faces(">Z").shell(-WALL)
+)
+
+disp = (
+    cq.Workplane("XY")
+    .workplane(offset=POD_H / 2 - WALL)
+    .rect(DISP_W, DISP_H).extrude(WALL + 0.5, combine="s")
+)
+
+strap_slots = (
+    cq.Workplane("YZ")
+    .workplane(offset=POD_L / 2 - 2.0, centerOption="CenterOfBoundBox")
+    .rect(STRAP_W, STRAP_H).extrude(-3.0, combine="s")
+)
+strap_slots_back = (
+    cq.Workplane("YZ")
+    .workplane(offset=-POD_L / 2 + 2.0, centerOption="CenterOfBoundBox")
+    .rect(STRAP_W, STRAP_H).extrude(3.0, combine="s")
+)
+
+pogos = (
+    cq.Workplane("XY")
+    .workplane(offset=-POD_H / 2)
+    .pushPoints([(+5.0, 0), (-5.0, 0)])
+    .circle(POGO_D / 2).extrude(-WALL - 0.5, combine="s")
+)
+
+result = shell.cut(disp).cut(strap_slots).cut(strap_slots_back).cut(pogos)
+```
+<!-- /cadquery-base -->

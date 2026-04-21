@@ -55,3 +55,55 @@ nRF52805 at +4dBm with PCB antenna in a plastic shell ≈ 40-80m line-of-sight o
 | QA + chew test (amortized) | 1 | $150 | $150 |
 | **Total** | | | **~$1030** |
 | Per-unit landed | | | **~$10.30** |
+
+<!-- cadquery-base -->
+```python
+import cadquery as cq
+
+# ── Pet collar pod (chew-resistant, ultrasonically welded) ──────────────────
+# Teardrop pod threaded through the collar via two slots on the back.
+# Magnetic pogo contacts on the underside; LED on the tail; no user-openable
+# battery door. Ultrasonic weld seam at the equator.
+POD_L       = 36.0
+POD_W       = 22.0
+POD_H       = 11.0
+CORNER_R    = 4.0
+WALL        = 1.8
+COLLAR_W    = 18.0   # slot width (fits up to 18mm webbing)
+COLLAR_GAP  = 4.0    # slot height
+POGO_D      = 2.4
+LED_D       = 3.0
+
+pod = (
+    cq.Workplane("XY")
+    .box(POD_L, POD_W, POD_H)
+    .edges("|Z").fillet(CORNER_R)
+    .edges(">Z or <Z").fillet(2.5)
+)
+shell = pod.faces(">Z").shell(-WALL)
+
+# Collar slots: two vertical slits spaced so webbing threads flat.
+slots = (
+    cq.Workplane("XY")
+    .pushPoints([(+POD_L / 2 - 4, 0), (-POD_L / 2 + 4, 0)])
+    .rect(COLLAR_GAP, COLLAR_W).extrude(POD_H + 1, both=True, combine="s")
+)
+
+# Pogo contacts on the bottom.
+pogos = (
+    cq.Workplane("XY")
+    .workplane(offset=-POD_H / 2)
+    .pushPoints([(+5.0, 0), (-5.0, 0)])
+    .circle(POGO_D / 2).extrude(-WALL - 0.5, combine="s")
+)
+
+# LED on the tail (+X face).
+led = (
+    cq.Workplane("YZ")
+    .workplane(offset=POD_L / 2 + 0.1, centerOption="CenterOfBoundBox")
+    .circle(LED_D / 2).extrude(-WALL - 0.5, combine="s")
+)
+
+result = shell.cut(slots).cut(pogos).cut(led)
+```
+<!-- /cadquery-base -->
