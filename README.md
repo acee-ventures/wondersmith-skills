@@ -1,12 +1,35 @@
 # wondersmith-skills
 
-Public design skill library used by the [WonderSmith](https://wondersmith.app) Deep Design pipeline.
+**Agent entry point** for the [WonderSmith](https://wondersmith.app) Deep Design pipeline.
 
-Each `SKILL.md` follows the [agentskills.io](https://agentskills.io) format (flat YAML frontmatter + markdown body) so external agent frameworks — Claude Code, Cursor, Codex, Hermes — can consume them directly.
+Two layers in this repo:
 
-## What's in a skill
+1. **`SKILL.md` at the root** — the installable agent skill. Drop this into Claude Code, Cursor, Codex, or any agentskills.io-compatible framework and the agent learns how to use the `wondersmith` CLI to design manufacturing-ready products. **This is what you want if you are an agent.**
 
-Each file encodes a **production recipe**: a budget band, core component list, realistic per-unit pilot cost sketch, and the compliance items (CPSIA / IPX rating / NSF / UL / FCC SDoC) that LLMs tend to miss without guidance. The skills move domain facts out of the prompt context.
+2. **`skills/<category>/SKILL.md`** — prior-art recipe library (11 categories). Not individually installable. These are context WonderSmith's own planner matches against at design time; external agents can also read them as prompt context when they need domain guidance (e.g. "what does a good desk-electronics BOM look like?").
+
+## Quickstart for agents
+
+```bash
+# 1. install the CLI (published on npm)
+npm i -g wondersmith
+
+# 2. user provides their admin key (ws_live_…) — ask them if they have one
+wondersmith login --key ws_live_...
+
+# 3. design
+wondersmith design "a desk weather station, e-ink, ESP32, USB-C" \
+  --depth standard --json --detach
+
+# 4. come back and watch
+wondersmith runs watch <runId> --json --timeout 1800
+```
+
+Full protocol and long-running etiquette: see [`SKILL.md`](./SKILL.md).
+
+## What's in a recipe skill (the `skills/` library)
+
+Each file encodes a **production recipe**: a budget band, core component list, realistic per-unit pilot cost sketch, and the compliance items (CPSIA / IPX rating / NSF / UL / FCC SDoC) that LLMs tend to miss without guidance. The recipes move domain facts out of the prompt context.
 
 ## Current skills (11)
 
