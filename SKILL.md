@@ -135,10 +135,14 @@ category explicitly improves the match. Current recipes:
 | `power-tool` | ~$70-250 | 18650 pack + UL 62841 |
 | `plant-care` | ~$40-180 | ESP32-C3 + soil/light probe |
 
-See `skills/<category>/SKILL.md` in this repo for the full recipe
-(BOM skeleton, compliance requirements, cost sketch). You can pass
-these as context to your own LLM if you need design guidance before
-calling WonderSmith.
+Each archetype has a dedicated installable skill at
+`skills/recipes/<archetype>/SKILL.md` (agent-facing — teaches you
+exactly when to trigger it, which CLI flags to use, what output
+artifacts to expect, and the compliance traps to warn the user about
+upfront). Install the one that matches the user's prompt. Slugs:
+`desk-electronics`, `desk-lamp`, `kids-toy-soft`, `kitchen-sensor`,
+`wearable-fitness`, `bike-accessory`, `pet-collar`, `audio-speaker`,
+`led-wall-display`, `battery-tool`, `plant-care`.
 
 ## Credits & rate limits
 
