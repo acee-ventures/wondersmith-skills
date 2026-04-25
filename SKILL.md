@@ -7,7 +7,7 @@ compatibility:
 metadata:
   category: agent-tool
   tool: wondersmith-cli
-  minVersion: "0.1.0-beta.0"
+  minVersion: "0.2.0-beta.0"
   homepage: https://wondersmith.app
 ---
 
@@ -76,6 +76,20 @@ wondersmith design "…" --depth deliberate --json --detach
 
 Capture the `runId` from the start event — you will need it.
 
+**Highest-quality design path: LATS tree search** (Sprint 4+, use when the
+user explicitly asks for the best version or accepts higher cost):
+```bash
+wondersmith design "a desk clock with e-ink, BLE weather sync, USB-C" \
+  --depth deliberate --tree-search 3 --json --detach
+# → prints {"event":"lats-start","latsGroupId":"…","siblings":[…]}
+```
+
+`--tree-search <N>` fans out 2-5 full Deep Design siblings using the same
+prompt, matched recipe, and plan templates, then ranks them by the Step 9
+critic score. It is incompatible with `--depth quick`; prefer
+`--depth deliberate` for normal LATS and `--depth deep` only for complex
+multi-subsystem products where the user accepts both time and cost.
+
 ## Poll for completion
 
 ```bash
@@ -93,6 +107,10 @@ If you need to do other work while waiting, DO NOT block the
 conversation polling. Start the run with `--detach`, announce the
 runId to the user, and poll only when they ask or when enough wall
 time has passed.
+
+For LATS runs, preserve both `latsGroupId` and all sibling `runId`s. The
+winner is returned by the group polling endpoint and may not be the first
+sibling to finish.
 
 ## Read the results
 
@@ -156,6 +174,8 @@ starting — the run will otherwise fail at charge time.
 
 `/api/v1/design` is rate-limited per API key (Sprint 3 default:
 30 requests / 60s). A 429 response includes a retry-after hint.
+`/api/v1/design/lats` has a tighter endpoint-specific bucket because each
+request fans out multiple Deep Design runs.
 
 ## Long-running etiquette (IMPORTANT)
 
