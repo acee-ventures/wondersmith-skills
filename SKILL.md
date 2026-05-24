@@ -1,6 +1,6 @@
 ---
 name: wondersmith
-description: Use the `wondersmith` CLI to design manufacturing-ready physical products — BOM + STEP/STL/GLB + assembly plan + LeadArt quote — via WonderSmith's Deep Design deliberation engine. Trigger when the user asks to design a physical/hardware product, generate a manufacturing BOM, turn an idea into a buildable spec, or produce CAD files for fabrication. Do NOT trigger for pure software, digital mockups, or visual-only concept art.
+description: Use the `wondersmith` CLI to design manufacturing-ready physical products — BOM + STEP/STL/GLB + assembly plan + manufacturer quote — via WonderSmith's Deep Design deliberation engine. Trigger when the user asks to design a physical/hardware product, generate a manufacturing BOM, turn an idea into a buildable spec, or produce CAD files for fabrication. Do NOT trigger for pure software, digital mockups, or visual-only concept art.
 license: CC-BY-NC-4.0
 compatibility:
   agentskills: "1.0"
@@ -130,7 +130,7 @@ Deliberate+/Deep adds: `3d-model` (STEP + STL + GLB base64 + the
 CadQuery Python source), `cadquery-source` (when the exec-critic
 repaired the Python), `kicad-sch` (S-expression schematic text).
 
-The LeadArt order flow zips all of them into a single package with
+The manufacturer order flow zips all of them into a single package with
 `ORDER_INFO.json.engineeringArtifacts` listing what's present.
 
 ## Nudge the matcher: known product categories
